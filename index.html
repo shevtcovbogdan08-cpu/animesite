@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AnimeVerse — премиальный аниме-кинотеатр. Смотрите Ван-Пис и другие тайтлы." />
+  <title>AnimeVerse — Премиальный аниме-кинотеатр</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <header class="site-header" id="site-header">
+      <a href="#/" class="logo" aria-label="AnimeVerse — на главную">
+        <span class="logo__mark">A</span>
+        <span class="logo__text">AnimeVerse</span>
+      </a>
+      <nav class="nav-links" aria-label="Основная навигация">
+        <a href="#/" class="nav-link is-current" data-route="home">Главная</a>
+        <a href="#/trends" class="nav-link" data-route="trends">Тренды</a>
+        <a href="#/new" class="nav-link" data-route="new">Новинки</a>
+      </nav>
+      <div class="header-actions">
+        <div class="search-bar">
+          <svg class="search-bar__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
+            <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          <input type="search" id="search-input" placeholder="Поиск аниме..." aria-label="Поиск аниме" />
+        </div>
+        <button type="button" class="debug-toggle" id="debug-toggle" title="Debug Panel (Ctrl+Shift+D)" aria-label="Открыть панель отладки">
+          <span class="debug-toggle__dot" aria-hidden="true"></span>
+        </button>
+      </div>
+    </header>
+
+    <main id="main-content">
+
+      <section id="home-view" class="view is-active" aria-label="Главная страница">
+        <section class="hero-slider" id="hero-slider" aria-label="Тренды недели">
+          <div class="hero-dots" id="hero-dots" aria-hidden="true"></div>
+        </section>
+
+        <section class="anime-section" aria-label="Популярное аниме">
+          <header class="section-header">
+            <h2 class="section-title">Популярное сейчас</h2>
+            <span class="section-badge" id="anime-count-badge">0 тайтлов</span>
+          </header>
+          <div class="anime-grid" id="anime-grid" role="list"></div>
+        </section>
+
+        <section class="achievements-collection" aria-label="Коллекция наград">
+          <header class="achievements-header">
+            <div class="achievements-header__title">
+              <h2>Коллекция наград</h2>
+              <p class="achievements-header__subtitle">Открывайте достижения во время просмотра</p>
+            </div>
+            <span class="achievements-counter" id="achievements-counter">0 / 3</span>
+          </header>
+          <div class="achievements-grid" id="achievements-grid"></div>
+        </section>
+      </section>
+
+      <section id="detail-view" class="view" aria-label="Страница просмотра">
+        <button type="button" class="detail-back" id="detail-back" aria-label="Назад на главную">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6" fill="none" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          Назад
+        </button>
+
+        <div class="detail-hero">
+          <div class="detail-poster">
+            <img id="detail-poster-img" src="" alt="" loading="lazy" />
+          </div>
+          <div class="detail-info">
+            <h1 class="detail-title" id="detail-title">—</h1>
+            <div class="detail-meta" id="detail-meta"></div>
+            <div class="detail-genres" id="detail-genres"></div>
+            <p class="detail-description" id="detail-description">—</p>
+            <div class="detail-actions">
+              <button type="button" class="btn btn--primary" id="detail-watch-btn">Смотреть</button>
+              <button type="button" class="btn btn--ghost" id="detail-list-btn">В список</button>
+            </div>
+          </div>
+        </div>
+
+        <section class="player-section" aria-label="Видеоплеер">
+          <div class="player-wrapper is-loading" id="player-wrapper">
+            <div class="player-spinner" aria-hidden="true"></div>
+            <div class="player-error" id="player-error">
+              <p class="player-error__text" id="player-error-text">Не удалось загрузить плеер.</p>
+              <button type="button" class="btn btn--primary" id="player-retry-btn">Повторить</button>
+            </div>
+          </div>
+          <div class="voiceover-tabs" id="voiceover-tabs" role="tablist" aria-label="Озвучки"></div>
+        </section>
+
+        <section class="episodes-section" aria-label="Список серий">
+          <header class="section-header">
+            <h2 class="section-title">Серии</h2>
+            <span class="section-badge" id="episodes-count-badge">—</span>
+          </header>
+          <div class="episode-tabs" id="episode-tabs" role="tablist" aria-label="Диапазоны серий"></div>
+          <div class="episode-grid" id="episode-grid" role="group" aria-label="Кнопки серий"></div>
+        </section>
+      </section>
+
+    </main>
+
+    <footer class="site-footer">
+      <p class="footer-copy">© <span id="footer-year"></span> AnimeVerse. Демо-проект на Vanilla JS.</p>
+      <div class="footer-links">
+        <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
+        <button type="button" class="footer-debug-btn" id="footer-debug-btn" aria-label="Открыть панель отладки">🐞 Debug</button>
+      </div>
+    </footer>
+
+  </div>
+
+  <div id="achievement-toast" class="achievement-toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <aside id="debug-panel" class="debug-panel" aria-label="Панель отладки" aria-hidden="true">
+    <header class="debug-panel__header">
+      <span class="debug-panel__title">🛠 Debug Panel</span>
+      <div class="debug-panel__actions">
+        <button type="button" id="debug-clear" class="debug-btn" title="Очистить">Clear</button>
+        <button type="button" id="debug-close" class="debug-btn" title="Закрыть">✕</button>
+      </div>
+    </header>
+    <div class="debug-panel__log" id="debug-log" aria-live="polite"></div>
+  </aside>
+
+  <script>
+    window.__POSTER_PLACEHOLDER__ =
+      'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">' +
+        '<rect width="300" height="450" fill="#14141f"/>' +
+        '<text x="150" y="225" font-family="system-ui,sans-serif" font-size="16" fill="#5a5a6a" text-anchor="middle">Нет постера</text>' +
+        '</svg>'
+      );
+  </script>
+
+  <script src="script.js"></script>
+</body>
+</html>
