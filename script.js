@@ -1,9 +1,9 @@
+/* ============================================================
+   ANIMEVERSE — script.js (v2 — Sibnet fix)
+   ============================================================ */
 (function () {
   'use strict';
 
-  /* ==========================================================
-     0. КОНСТАНТЫ
-     ========================================================== */
   const CONFIG = {
     ONE_PIECE_FALLBACK_EPISODES: 1180,
     FALLBACK_POSTER: window.__POSTER_PLACEHOLDER__,
@@ -14,12 +14,11 @@
     DEBUG_MAX_ENTRIES: 100,
     STORAGE_ACHIEVEMENTS: 'onepiece_achievements_unlocked_v1',
     STORAGE_WATCHED: 'onepiece_watched_episodes_v1',
-    EPISODES_PER_TAB: 100
+    EPISODES_PER_TAB: 100,
+    SIBNET_VIDEO_ID: 2038198 // реальный ID первой серии Ван-Писа на Sibnet
   };
 
-  /* ==========================================================
-     1. DEBUG LOGGER
-     ========================================================== */
+  /* ---------- DEBUG ---------- */
   const DebugLog = (function () {
     const entries = [];
     let renderScheduled = false;
@@ -65,13 +64,10 @@
     function close() { const el = panelEl(); if (!el) return; panelOpen = false; el.classList.remove('is-open'); el.setAttribute('aria-hidden', 'true'); }
     function toggle() { if (panelOpen) close(); else open(); }
     function clear() { entries.length = 0; flush(); }
-
     return { info: m => push('info', m), warn: m => push('warn', m), error: m => push('error', m), heal: m => push('heal', m), open, close, toggle, clear };
   })();
 
-  /* ==========================================================
-     2. ГЛОБАЛЬНЫЕ ОБРАБОТЧИКИ ОШИБОК
-     ========================================================== */
+  /* ---------- GLOBAL ERRORS ---------- */
   window.addEventListener('error', function (event) {
     if (event.target && event.target !== window) {
       const tag = event.target.tagName;
@@ -90,9 +86,7 @@
     DebugLog.error('Unhandled Promise: ' + (event.reason && event.reason.message ? event.reason.message : event.reason));
   });
 
-  /* ==========================================================
-     3. УТИЛИТЫ
-     ========================================================== */
+  /* ---------- UTILS ---------- */
   function escapeHtml(str) {
     if (typeof str !== 'string') return '';
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -100,9 +94,7 @@
   function safeParseInt(value) { const n = parseInt(value, 10); return isNaN(n) ? null : n; }
   function formatRange(start, end) { return start + '–' + end; }
 
-  /* ==========================================================
-     4. КАТАЛОГ
-     ========================================================== */
+  /* ---------- CATALOG ---------- */
   const CATALOG = [
     {
       id: 'one-piece',
@@ -120,9 +112,7 @@
     }
   ];
 
-  /* ==========================================================
-     5. HERO SLIDER
-     ========================================================== */
+  /* ---------- HERO ---------- */
   const HeroSlider = (function () {
     const slides = [];
     let current = 0;
@@ -207,9 +197,7 @@
     });
   }
 
-  /* ==========================================================
-     6. ROUTER
-     ========================================================== */
+  /* ---------- ROUTER ---------- */
   const Router = (function () {
     let currentAnime = null;
     function showView(viewId) {
@@ -231,9 +219,7 @@
   })();
   function openDetail(id) { Router.openDetail(id); }
 
-  /* ==========================================================
-     7. DETAIL VIEW + СПИСОК СЕРИЙ
-     ========================================================== */
+  /* ---------- DETAIL VIEW ---------- */
   const DetailView = (function () {
     let currentAnime = null;
     let totalEpisodes = 0;
@@ -402,9 +388,7 @@
     return { render, getCurrentEpisode: () => currentEpisode, getAnime: () => currentAnime, selectEpisode };
   })();
 
-  /* ==========================================================
-     8. PLAYER MANAGER + FAILOVER
-     ========================================================== */
+  /* ---------- PLAYER MANAGER ---------- */
   const PlayerManager = (function () {
     let watchdogTimer = null;
     let isRecovering = false;
@@ -418,33 +402,20 @@
     function getWrapper() { return document.getElementById('player-wrapper'); }
     function getErrorText() { return document.getElementById('player-error-text'); }
 
-    /* ======================================================
-       ⚠️ ВСТАВЬТЕ СЮДА РЕАЛЬНУЮ ССЫЛКУ ИЗ anime-table
-       ======================================================
-       Откройте https://github.com/nnaxim/anime-table
-       Найдите запись с shikimori_id = "21" (One Piece).
-       Скопируйте значение поля "link" (это готовая ссылка на iframe Kodik).
-       Замените строку ниже на эту ссылку.
-
-       Пример (подставьте свою):
-       const REAL_KODIK_LINK = 'https://kodikplayer.com/seria/123456/abcdef/720p';
-       ====================================================== */
-    const REAL_KODIK_LINK = 'https://kodikplayer.com/seria/XXXXX/XXXXX/720p?translations=true&only_episode=true'; // <-- ЗАМЕНИТЕ НА СВОЮ ССЫЛКУ
-
     function buildSourceQueue(anime, episode) {
       const queue = [];
 
-      // 1. Реальная ссылка из anime-table (основной источник)
-      // Если в ссылке из таблицы есть placeholder для серии, можно добавить
-      // параметр episode, но обычно ссылка уже ведёт на весь сериал
-      // и плеер сам показывает список серий.
-      if (REAL_KODIK_LINK && REAL_KODIK_LINK.indexOf('XXXXX') === -1) {
-        queue.push({ name: 'Kodik (anime-table)', url: REAL_KODIK_LINK });
-      }
+      // 1. Sibnet — рабочий источник (ID первой серии Ван-Писа)
+      queue.push({
+        name: 'Sibnet',
+        url: 'https://video.sibnet.ru/shell.php?videoid=' + CONFIG.SIBNET_VIDEO_ID + '&width=100%&height=100%'
+      });
 
-      // 2. Резервные источники на случай сбоя
-      queue.push({ name: 'Sibnet', url: 'https://video.sibnet.ru/shell.php?videoid=' + episode + '&width=100%&height=100%' });
-      queue.push({ name: 'Aniboom', url: 'https://aniboom.one/embed/' + (anime.shikimoriId || '21') + '?episode=' + episode });
+      // 2. Aniboom — fallback
+      queue.push({
+        name: 'Aniboom',
+        url: 'https://aniboom.one/embed/' + (anime.shikimoriId || '21') + '?episode=' + episode
+      });
 
       return queue;
     }
@@ -574,9 +545,7 @@
     return { loadEpisode, retry, setVoiceover, destroy };
   })();
 
-  /* ==========================================================
-     9. СИСТЕМА ДОСТИЖЕНИЙ
-     ========================================================== */
+  /* ---------- ACHIEVEMENTS ---------- */
   const AchievementsSystem = (function () {
     const achievementsDB = [
       { id: 'rubber_pirate', title: 'Резиновый пират', description: 'Луффи съедает фрукт Гому Гому.', episode: 1, time: 840, icon: '🏴‍☠️' },
@@ -690,9 +659,7 @@
     };
   })();
 
-  /* ==========================================================
-     10. ИНИЦИАЛИЗАЦИЯ
-     ========================================================== */
+  /* ---------- INIT ---------- */
   function init() {
     const yearEl = document.getElementById('footer-year');
     if (yearEl) yearEl.textContent = new Date().getFullYear();
@@ -721,10 +688,8 @@
     window.addEventListener('scroll', function () { if (header) header.classList.toggle('is-scrolled', window.scrollY > 50); }, { passive: true });
 
     AchievementsSystem.init();
-
     window.AnimeVerse = { Debug: DebugLog, Achievements: AchievementsSystem, Router, Player: PlayerManager };
-    DebugLog.info('✅ AnimeVerse инициализирован');
-    DebugLog.info('💡 Вставьте ссылку из anime-table в PlayerManager (REAL_KODIK_LINK)');
+    DebugLog.info('✅ AnimeVerse инициализирован (Sibnet fix)');
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
